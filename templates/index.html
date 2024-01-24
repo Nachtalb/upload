@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>File Upload Service</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #333;
+        color: white;
+      }
+      .upload-container {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #444;
+        border-radius: 8px;
+      }
+      .drag-area {
+        border: 2px dashed #d35d90;
+        height: 150px;
+        width: 100%;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: center;
+        margin-bottom: 20px;
+        flex-direction: column;
+        padding: 2em;
+      }
+      .drag-area.highlight {
+        background-color: #562742;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        border: none;
+        background: #d35d90;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background-color: #b1467a;
+      }
+      .api-key-input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        border: 2px solid #d35d90;
+        margin-bottom: 20px;
+        background: #333;
+        color: white;
+      }
+
+      #error {
+        color: #d35d90;
+        font-weight: bold;
+        text-align: center;
+        display: none;
+        margin-top: 2em;
+      }
+
+      #error.show {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="upload-container">
+      <form id="file-upload-form" method="post" enctype="multipart/form-data" action="/upload">
+        <div class="drag-area">
+          <header>Drag & Drop to Upload File</header>
+          <span>OR</span>
+          <button type="button" class="btn">Browse File</button>
+          <input type="file" id="fileInput" name="file" required />
+        </div>
+        <input
+          type="password"
+          id="apiKeyInput"
+          class="api-key-input"
+          name="api_key"
+          placeholder="Enter API Key"
+          required
+        />
+        <input type="submit" class="btn" value="Upload" />
+      </form>
+
+      <div id="error"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("file-upload-form");
+      const fileInput = document.getElementById("fileInput");
+      const apiKeyInput = document.getElementById("apiKeyInput");
+      const dragArea = document.querySelector(".drag-area");
+      const button = document.querySelector(".btn");
+      const errorField = document.getElementById("error");
+
+      button.onclick = () => fileInput.click();
+
+      fileInput.addEventListener("change", function () {
+        submitForm();
+      });
+
+      dragArea.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dragArea.classList.add("highlight");
+      });
+
+      dragArea.addEventListener("dragleave", () => {
+        dragArea.classList.remove("highlight");
+      });
+
+      dragArea.addEventListener("drop", (event) => {
+        event.preventDefault();
+        fileInput.files = event.dataTransfer.files;
+        submitForm();
+      });
+
+      window.onload = () => {
+        const storedApiKey = localStorage.getItem("apiKey");
+        if (storedApiKey) {
+          apiKeyInput.value = storedApiKey;
+        }
+      };
+
+      function submitForm() {
+        localStorage.setItem("apiKey", apiKeyInput.value);
+
+        fetch("/upload", {
+          method: "POST",
+          body: new FormData(form),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              errorField.innerText = data.error;
+              errorField.classList.add("show");
+              return;
+            }
+            window.location.href = data.url;
+          })
+          .catch((error) => {
+            errorField.innerText = error.message;
+            errorField.classList.add("show");
+          });
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        submitForm();
+      });
+    </script>
+  </body>
+</html>
