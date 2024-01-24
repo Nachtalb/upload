@@ -1,0 +1,4 @@
+uploads/
+api_keys.txt
+Dockerfile
+docker-compose.yml
